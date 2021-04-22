@@ -1,6 +1,6 @@
-package org.jetbrains.plugins.template.services
+package com.github.eaghayi.clusterusages.services
 
-import org.jetbrains.plugins.template.MyBundle
+import com.github.eaghayi.clusterusages.MyBundle
 
 class MyApplicationService {
 
