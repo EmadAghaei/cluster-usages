@@ -79,6 +79,9 @@ tasks {
     withType<Detekt> {
         jvmTarget = "1.8"
     }
+    withType<Jar> {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
 
     patchPluginXml {
         version(properties("pluginVersion"))
