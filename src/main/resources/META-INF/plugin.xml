@@ -11,13 +11,13 @@
         <usageGroupingRuleProvider implementation="com.github.eaghayi.clusterusages.gui.UniqueGroupingRuleProvider"/>
     </extensions>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.eaghayi.clusterusages.services.MyApplicationService"/>
-        <projectService serviceImplementation="com.github.eaghayi.clusterusages.services.MyProjectService"/>
-    </extensions>
+<!--    <extensions defaultExtensionNs="com.intellij">-->
+<!--        <applicationService serviceImplementation="com.github.eaghayi.clusterusages.services.MyApplicationService"/>-->
+<!--        <projectService serviceImplementation="com.github.eaghayi.clusterusages.services.MyProjectService"/>-->
+<!--    </extensions>-->
 
-    <applicationListeners>
-        <listener class="com.github.eaghayi.clusterusages.listeners.MyProjectManagerListener"
-                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
-    </applicationListeners>
+<!--    <applicationListeners>-->
+<!--        <listener class="com.github.eaghayi.clusterusages.listeners.MyProjectManagerListener"-->
+<!--                  topic="com.intellij.openapi.project.ProjectManagerListener"/>-->
+<!--    </applicationListeners>-->
 </idea-plugin>

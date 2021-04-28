@@ -1,13 +1,12 @@
 package gui;
 
+import backend.UsageAggregator;
 import com.intellij.ide.IdeBundle;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.usages.Usage;
 import com.intellij.usages.UsageGroup;
 import com.intellij.usages.UsageTarget;
 import com.intellij.usages.rules.SingleParentUsageGroupingRule;
-import edu.gmu.swe.intellij.uniqueusages.backend.UniqueUsageGroup;
-import edu.gmu.swe.intellij.uniqueusages.backend.UsageAggregator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
