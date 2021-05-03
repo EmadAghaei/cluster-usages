@@ -1,6 +1,7 @@
 <idea-plugin>
     <id>com.github.eaghayi.clusterusages</id>
-    <name>cluster-usages</name>
+    <name>Cluster Usages</name>
+    <description>adfasd</description>
     <vendor>eaghayi</vendor>
 
     <!-- Product and plugin compatibility requirements -->

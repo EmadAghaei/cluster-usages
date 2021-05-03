@@ -14,7 +14,12 @@
 - [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
 
 <!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
+When working in large and complex codebases, 
+developers face challenges using Find Usages to understand how to reuse classes and methods.  
+We found that developers often wasted time reading long lists of similar usages or prematurely focused on a single usage. 
+Based on these findings, we hypothesized that clustering usages by the similarity of their surrounding context might 
+enable developers to more rapidly understand how to use a function. 
+To explore this idea, we designed and implemented Find Unique Usages, which extracts usages, computes a diff between pairs of usages, generates similarity scores, and uses these scores to form usage clusters.
 
 This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
 
