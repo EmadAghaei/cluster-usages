@@ -34,14 +34,21 @@ public class UsageGroupAst {
 
     // finds a minimum similarity between a usage to be clustered and all members of a cluster
     public double getMinimumSimilarityTo(CodeBlock o) {
-//            return this.representativeElement.compareSimilarity(o);
         // it calculate similarity of codeblock to all usages we have
         Stream<Double> similarityStream = elements.parallelStream().map(elem -> elem.calculateSimilarityScore(o));
         // find the min of similarity
         Optional<Double> lowestSimilarity = similarityStream.min(Double::compareTo);
         if (!lowestSimilarity.isPresent()) { throw new RuntimeException("This should never happen");  }
+//        toString();
         return lowestSimilarity.get();
     }
 
-
+    @Override
+    public String toString() {
+        return "UsageGroupAst{" +
+                "representativeElement=" + representativeElement.getCode() +
+                ", group=" + group +
+                ", elements=" + elements +
+                '}';
+    }
 }
