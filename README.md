@@ -6,7 +6,7 @@
 
 ## Template ToDo list
 - [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Verify the [pluginGroup](/gradle.properties), [plugin ID](/src/main/resources/META-INF/plugin.xml) and [sources package](/src/main/kotlin).
+- [ ] Verify the [pluginGroup](/gradle.properties), [plugin ID](/src/main/resources/META-INF/plugin.xml) and [sources package](/src/main/java).
 - [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html).
 - [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
 - [ ] Set the Plugin ID in the above README badges.
@@ -14,16 +14,10 @@
 - [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
 
 <!-- Plugin description -->
-When working in large and complex codebases, 
-developers face challenges using Find Usages to understand how to reuse classes and methods.  
-We found that developers often wasted time reading long lists of similar usages or prematurely focused on a single usage. 
-Based on these findings, we hypothesized that clustering usages by the similarity of their surrounding context might 
-enable developers to more rapidly understand how to use a function. 
-To explore this idea, we designed and implemented Find Unique Usages, which extracts usages, computes a diff between pairs of usages, generates similarity scores, and uses these scores to form usage clusters.
+Extracts usages, computes a diff between pairs of usages, 
+generates similarity scores, and uses these scores to form usage clusters.
 
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
-
-To keep everything working, do not remove `<!-- ... -->` sections. 
+To cluster usages, From the main menu, select Edit | Find Usages | Find Usages. Or you could also use the shortcut Alt + F7 for Windows/Linux or Option + F7 for Mac OS.
 <!-- Plugin description end -->
 
 ## Installation
