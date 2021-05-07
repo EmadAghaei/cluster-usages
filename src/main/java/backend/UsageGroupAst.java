@@ -5,26 +5,26 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class AstSimilarityNode {
-    private CodeBlockUsage representativeElement;
+public class UsageGroupAst {
+    private CodeBlock representativeElement;
     private UniqueUsageGroup group;
-    private Set<CodeBlockUsage> elements = new HashSet<>();
+    private Set<CodeBlock> elements = new HashSet<>();
 
-    public AstSimilarityNode(CodeBlockUsage representativeElement, UniqueUsageGroup group) {
+    public UsageGroupAst(CodeBlock representativeElement, UniqueUsageGroup group) {
         this.representativeElement = representativeElement;
         this.group = group;
         elements.add(representativeElement);
     }
 
-    public Set<CodeBlockUsage> getElements() {
+    public Set<CodeBlock> getElements() {
         return elements;
     }
 
-    public void setElements(Set<CodeBlockUsage> elements) {
+    public void setElements(Set<CodeBlock> elements) {
         this.elements = elements;
     }
 
-    public CodeBlockUsage getRepresentativeElement() {
+    public CodeBlock getRepresentativeElement() {
         return representativeElement;
     }
 
@@ -32,9 +32,12 @@ public class AstSimilarityNode {
         return group;
     }
 
-    public double getSimilarityTo(CodeBlockUsage o) {
+    // finds a minimum similarity between a usage to be clustered and all members of a cluster
+    public double getMinimumSimilarityTo(CodeBlock o) {
 //            return this.representativeElement.compareSimilarity(o);
-        Stream<Double> similarityStream = elements.parallelStream().map(elem -> elem.compareSimilarity(o));
+        // it calculate similarity of codeblock to all usages we have
+        Stream<Double> similarityStream = elements.parallelStream().map(elem -> elem.calculateSimilarityScore(o));
+        // find the min of similarity
         Optional<Double> lowestSimilarity = similarityStream.min(Double::compareTo);
         if (!lowestSimilarity.isPresent()) { throw new RuntimeException("This should never happen");  }
         return lowestSimilarity.get();
