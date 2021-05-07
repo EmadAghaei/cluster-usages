@@ -10,19 +10,21 @@ import spoon.reflect.declaration.CtClass;
 
 import java.util.Set;
 
-public class CodeBlockUsage {
+public class CodeBlock {
     private PsiElement codeBlock;
     private CtClass<?> ctClass;
     private final static AstComparator AST_COMPARATOR = new AstComparator();
 
-    public CodeBlockUsage(PsiElement codeBlock, String clazzName) {
+    public CodeBlock(PsiElement codeBlock) {
         this.codeBlock = codeBlock;
-        String fakeBeginStub = String.format("class %s { ", clazzName);
+//        String fakeBeginStub = String.format("class %s { ", clazzName);
+        String fakeBeginStub = "class clazz {";
         String fakeEndStub = "\n}";
         try {
             this.ctClass = Launcher.parseClass(fakeBeginStub + codeBlock.getText() + fakeEndStub);
-        } catch (Exception ex){
-//            System.out.println(clazzName + "\n ---"+ codeBlock.getText());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println("\n ---" + codeBlock.getText());
         }
 
     }
@@ -34,22 +36,23 @@ public class CodeBlockUsage {
     @Override
     public String toString() {
         return "CodeBlockUsage{" +
-                "codeBlock=" + codeBlock +
+                "codeBlock=" + getCode() +
                 ", ctClass=" + ctClass +
                 '}';
     }
 
-    public double compareSimilarity(@NotNull CodeBlockUsage o) {
+
+    public double calculateSimilarityScore(@NotNull CodeBlock codeBlock) {
         try {
-            int myFakeASTNodeCount = this.ctClass.filterChildren(null).list().size();
-            int otherFakeASTNodeCount = o.ctClass.filterChildren(null).list().size();
-            Diff astDiff = AST_COMPARATOR.compare(this.ctClass, o.ctClass);
+            int thisNodesCount = this.ctClass.filterChildren(null).list().size();
+            int codeBlockNodesCount = codeBlock.ctClass.filterChildren(null).list().size();
+            Diff astDiff = AST_COMPARATOR.compare(this.ctClass, codeBlock.ctClass);
             Set<Mapping> similiarities = astDiff.getMappingsComp().asSet();
-            double simarility = 2 * similiarities.size() /
-                    (double) (2 * similiarities.size() + myFakeASTNodeCount + otherFakeASTNodeCount);
-            return simarility;
-        }catch (Exception e) {
-            System.out.println(o.toString());
+            // normalize similarity
+            return 2 * similiarities.size() /
+                    (double) (2 * similiarities.size() + thisNodesCount + codeBlockNodesCount);
+        } catch (Exception e) {
+            System.out.println(codeBlock.toString());
             e.printStackTrace();
             throw new RuntimeException();
         }
