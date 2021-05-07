@@ -10,86 +10,60 @@ import java.util.*;
 
 public class UsageAggregator {
 
-
-    private final static double SIMILIAR_THRESHOLD = 0.15; // lower means combine more
-    private List<AstSimilarityNode> astSimilarityList = new LinkedList<>();
+    // If we set the similarity threshold to 0.15, usages that are less than 85% similar are unlikely to be assigned to the same group.
+    // If we set the SIMILIAR_THRESHOLD =0 we can say usages less than 100% similar usages (identical usages) are placed to different groups.
+    private final static double SIMILIAR_THRESHOLD = 0.15; // the threshold is inverted and means allowed difference between usages within one group.
+    private List<UsageGroupAst> astSimilarityList = new LinkedList<>();
     private Set<String> codeBlockSet = new HashSet<>();
-
-//    private Map<String, UniqueUsageGroup> usageToUniqueUsageGroup = new HashMap<String, UniqueUsageGroup>();
-//    private Map<String, UsageInfo> usageToUsageInfo = new HashMap<String, UsageInfo>();
-//    private Map<UniqueUsageGroup, CodeBlockUsage> usageInfoToCodeBlockMap = new HashMap<>();
-//    private SortedMap<CodeBlockUsage, UniqueUsageGroup> codeBlockIntegerSortedMap = new TreeMap<>();
 
     public synchronized UsageGroup getAggregateUsage(Usage usage) {
         UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
-        PsiElement currentElement = usageInfo.getElement();
-
-
-//        while (currentElement != null && !currentElement.toString().contains("PsiMethod:")) {
-//            currentElement = currentElement.getContext();
-//            System.out.println(currentElement.getContext().toString());
-//        }
-        currentElement = currentElement.getContext().getParent();
-//        System.out.println(currentElement.toString());
-
-        PsiElement codeBlockElement = currentElement;
-        CodeBlockUsage codeBlockUsage;
-
-        if (codeBlockElement != null) {
-            if (codeBlockSet.contains(codeBlockElement.getText())) {
-                return null;
-            }
-            codeBlockSet.add(codeBlockElement.getText());
-
-            String codeBlockElementClazzName = codeBlockElement.getContext().toString().replaceFirst(".*:", "");
-            if (codeBlockElementClazzName.equals("@link")) {
-                System.out.println(codeBlockElementClazzName +"---"+ codeBlockElement.getText());
-                return null;
-            }
-
-            codeBlockUsage = new CodeBlockUsage(codeBlockElement, codeBlockElementClazzName);
-
-            Optional<AstSimilarityNode> mostSimilarAstKey = Optional.empty();
-            double highestSimilarityRating = 0.0;
-
-            mostSimilarAstKey = astSimilarityList.parallelStream()
-                    .max((a, b) ->
-                            (int) (1000 * (a.getSimilarityTo(codeBlockUsage) - b.getSimilarityTo(codeBlockUsage))));
-
-
-//            for (AstSimilarityNode astSimilarityNode: astSimilarityList) {
-//                double maxSimilarityTo = astSimilarityNode.getSimilarityTo(codeBlockUsage);
-//                if (maxSimilarityTo > highestSimilarityRating) {
-//                    mostSimilarAstKey = Optional.of(astSimilarityNode);
-//                    highestSimilarityRating = maxSimilarityTo;
-//                }
-//            }
-
-            if (mostSimilarAstKey.isPresent()) {
-                highestSimilarityRating = mostSimilarAstKey.get().getSimilarityTo(codeBlockUsage);
-            }
-
-            if (highestSimilarityRating > SIMILIAR_THRESHOLD) {
-//                System.out.println("Aggregation occurred");
-//                System.out.println(highestSimilarityRating);
-                // Check if returning exact match because classic find usages is weird.
-                if (highestSimilarityRating >= 1.0) {
-                    throw new RuntimeException("This should never happen!");
-                }
-                mostSimilarAstKey.get().getElements().add(codeBlockUsage);
-                mostSimilarAstKey.get().getGroup().incrementUsageCount();
-                return mostSimilarAstKey.get().getGroup();
-            } else {
-//                System.out.println("new group occurred");
-//                System.out.println(highestSimilarityRating);
-                // Create and return a codeblock usage key
-                UniqueUsageGroup newAstKey = new UniqueUsageGroup("Similar Usage Group");
-                astSimilarityList.add(new AstSimilarityNode(codeBlockUsage, newAstKey));
-                return newAstKey;
-            }
-        } else {
+        PsiElement codeBlockPsiElement = getFirstCodeBlockParent(usageInfo.getElement());
+        if (codeBlockPsiElement == null) return null;
+        if (codeBlockSet.contains(codeBlockPsiElement.getText())) {
             return null;
-//            return usageToUniqueUsageGroup.get(key);
+        } else {
+            codeBlockSet.add(codeBlockPsiElement.getText());
         }
+        CodeBlock codeBlock = new CodeBlock(codeBlockPsiElement);
+        return cluster(codeBlock);
+    }
+
+//    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
+//    Based on max of mins similarity, it chooses the best cluster.
+    private synchronized UniqueUsageGroup cluster(CodeBlock codeBlock) {
+        Optional<UsageGroupAst> mostSimilarCodeBlock;
+        double highestSimilarityRating = 0.0;
+        // find the most similar usage to current code block
+        mostSimilarCodeBlock = astSimilarityList.parallelStream()
+                .max((a, b) ->
+                        (int) (1000 * (a.getMinimumSimilarityTo(codeBlock) - b.getMinimumSimilarityTo(codeBlock))));
+
+        if (mostSimilarCodeBlock.isPresent()) {
+            // calculate similarity score to the most similar usage in all usages
+            highestSimilarityRating = mostSimilarCodeBlock.get().getMinimumSimilarityTo(codeBlock);
+        }
+        // Check if returning exact match because classic find usages is weird.
+        if (highestSimilarityRating >= 1.0) {
+            throw new RuntimeException("This should never happen!");
+        }
+        if (highestSimilarityRating > SIMILIAR_THRESHOLD) {
+            mostSimilarCodeBlock.get().getElements().add(codeBlock);
+            mostSimilarCodeBlock.get().getGroup().incrementUsageCount();
+            return mostSimilarCodeBlock.get().getGroup();
+        } else {
+            // Create and return a codeblock usage key
+            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Similar Usage Group");
+            astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
+            return newAstKey;
+        }
+    }
+
+    private PsiElement getFirstCodeBlockParent(PsiElement element) {
+        while (element != null && !element.toString().contains("PsiCodeBlock")) {
+            element = element.getContext();
+        }
+//        PsiElement codeBlockPsiElement = PsiTreeUtil.getParentOfType(usageInfo.getElement(), PsiCodeBlock.class);
+        return element;
     }
 }
