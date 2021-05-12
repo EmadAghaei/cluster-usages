@@ -36,7 +36,7 @@ public class UsageGroupAst {
     public double getMinimumSimilarityTo(CodeBlock o) {
         // it calculate similarity of codeblock to all usages we have
         Stream<Double> similarityStream = elements.parallelStream().map(elem -> elem.calculateSimilarityScore(o));
-        // find the min of similarity
+        // find the most similar usage by finding minimum distance
         Optional<Double> lowestSimilarity = similarityStream.min(Double::compareTo);
         if (!lowestSimilarity.isPresent()) { throw new RuntimeException("This should never happen");  }
 //        toString();
