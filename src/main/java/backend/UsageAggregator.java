@@ -10,10 +10,10 @@ import java.util.*;
 
 public class UsageAggregator {
 
-    // If we set the similarity threshold to 0.25, usages that are less than 75% similar are unlikely to be assigned to the same group.
-    // If we set the SIMILIAR_THRESHOLD =0 we can say usages less than 100% similar usages (identical usages) are placed to different groups.
-    private final static double SIMILIAR_THRESHOLD = 0.15; // the threshold is inverted and means allowed difference between usages within one group.
+    // If we set the similarity threshold to 0.25, usages that are more than 25% similar would be assigned to the same group.
+    private final static double MIN_SIMLIAR_THRESHOLD = 0.25;
     private List<UsageGroupAst> astSimilarityList = new LinkedList<>();
+    private int groupCount=1;
 //    private Set<String> codeBlockSet = new HashSet<>();
 
     public synchronized UsageGroup getAggregateUsage(Usage usage) {
@@ -32,28 +32,28 @@ public class UsageAggregator {
 //    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
 //    Based on max of mins similarity, it chooses the best cluster.
     private synchronized UniqueUsageGroup cluster(CodeBlock codeBlock) {
-        Optional<UsageGroupAst> mostSimilarCodeBlock;
         double highestSimilarityRating = 0.0;
         // find the most similar usage to current code block
-        mostSimilarCodeBlock = astSimilarityList.parallelStream()
+        Optional<UsageGroupAst>  mostSimilarGroup = astSimilarityList.parallelStream()
                 .max((a, b) ->
-                        (int) (1000 * (a.getMinimumSimilarityTo(codeBlock) - b.getMinimumSimilarityTo(codeBlock))));
+                        (int) (10000 * (a.getMinimumSimilarityTo(codeBlock) - b.getMinimumSimilarityTo(codeBlock))));
 
-        if (mostSimilarCodeBlock.isPresent()) {
+        if (mostSimilarGroup.isPresent()) {
              // calculate similarity score to the most similar usage in all usages
-            highestSimilarityRating = mostSimilarCodeBlock.get().getMinimumSimilarityTo(codeBlock);
+            highestSimilarityRating = mostSimilarGroup.get().getMinimumSimilarityTo(codeBlock);
         }
         // Check if returning exact match because classic find usages is weird.
         if (highestSimilarityRating > 1.0) {
             throw new RuntimeException("This should never happen!");
         }
-        if (highestSimilarityRating > SIMILIAR_THRESHOLD) {
-            mostSimilarCodeBlock.get().getElements().add(codeBlock);
-            mostSimilarCodeBlock.get().getGroup().incrementUsageCount();
-            return mostSimilarCodeBlock.get().getGroup();
+        // it found the cluster which can be added.
+        if (highestSimilarityRating > MIN_SIMLIAR_THRESHOLD) {
+            mostSimilarGroup.get().getElements().add(codeBlock);
+            mostSimilarGroup.get().getGroup().incrementUsageCount();
+            return mostSimilarGroup.get().getGroup();
         } else {
-            // Create and return a codeblock usage key
-            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Similar Usage Group");
+            // Create and return a code block usage key
+            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Usage Group "+ (groupCount++) +", ");
             astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
             return newAstKey;
         }
