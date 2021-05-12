@@ -15,7 +15,7 @@ public class CodeBlock {
     public CodeBlock(PsiElement codeBlock) {
         this.codeBlock = codeBlock;
         String fakeBeginStub = "class clazz {";
-        String fakeEndStub = "\n}";
+        String fakeEndStub = "}";
         try {
             this.ctClass = Launcher.parseClass(fakeBeginStub + codeBlock.getText() + fakeEndStub);
         } catch (Exception ex) {
@@ -43,12 +43,12 @@ public class CodeBlock {
 //            int thisNodesCount = this.ctClass.filterChildren(null).list().size();
 //            int codeBlockNodesCount = codeBlock.ctClass.filterChildren(null).list().size();
             Diff astDiff = AST_COMPARATOR.compare(this.ctClass, codeBlock.ctClass);
-            int diffCount = astDiff.getRootOperations().size();
+            int diffCount = astDiff.getAllOperations().size();
             int similarityCount = astDiff.getMappingsComp().asSet().size();
             // normalize similarity
             return similarityCount / (double) (diffCount +similarityCount);
         } catch (Exception e) {
-            System.out.println(codeBlock.toString());
+            System.out.println(codeBlock);
             e.printStackTrace();
             throw new RuntimeException();
         }
