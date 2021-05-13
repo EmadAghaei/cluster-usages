@@ -53,7 +53,7 @@ public class UsageAggregator {
             return mostSimilarGroup.get().getGroup();
         } else {
             // Create and return a code block usage key
-            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Usage Group "+ (groupCount++) +", ");
+            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Usage Group ");
             astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
             return newAstKey;
         }
