@@ -34,7 +34,7 @@ public class UsageAggregator {
     private synchronized UniqueUsageGroup cluster(CodeBlock codeBlock) {
         double highestSimilarityRating = 0.0;
         // find the most similar usage to current code block
-        Optional<UsageGroupAst>  mostSimilarGroup = astSimilarityList.parallelStream()
+        Optional<UsageGroupAst>  mostSimilarGroup = astSimilarityList.stream()
                 .max((a, b) ->
                         (int) (10000 * (a.getMinimumSimilarityTo(codeBlock) - b.getMinimumSimilarityTo(codeBlock))));
 
@@ -59,7 +59,7 @@ public class UsageAggregator {
         }
     }
 
-    private PsiElement getFirstCodeBlockParent(PsiElement element) {
+    private synchronized PsiElement getFirstCodeBlockParent(PsiElement element) {
         while (element != null && !element.toString().contains("PsiCodeBlock")) {
             element = element.getContext();
         }
