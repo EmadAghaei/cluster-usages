@@ -47,6 +47,14 @@ public class UsageGroupAst {
         return lowestSimilarity.getAsDouble();
     }
 
+    // finds a maximum similarity between a usage to be clustered and all members of a cluster
+    public double getSimilarityToMostSimilarUsageOfThisGroup(CodeBlock o) {
+        // it calculate similarity of codeblock to all usages we have
+        OptionalDouble mostSimilarityScore = elements.stream().
+                mapToDouble(elem -> elem.calculateSimilarityScore(o)).max();
+        return mostSimilarityScore.getAsDouble();
+    }
+
 //    @Override
 //    public String toString() {
 //        return "UsageGroupAst{" +

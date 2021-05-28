@@ -36,11 +36,13 @@ public class UsageAggregator {
         // find the most similar usage to current code block
         Optional<UsageGroupAst>  mostSimilarGroup = astSimilarityList.stream()
                 .max((a, b) ->
-                        (int) (10000 * (a.getSimilarityToAverageOfThisGroup(codeBlock) - b.getSimilarityToAverageOfThisGroup(codeBlock))));
+                        (int) (10000 * (a.getSimilarityToMostSimilarUsageOfThisGroup(codeBlock) - b.getSimilarityToMostSimilarUsageOfThisGroup(codeBlock))));
+//                        (int) (10000 * (a.getSimilarityToAverageOfThisGroup(codeBlock) - b.getSimilarityToAverageOfThisGroup(codeBlock))));
 
         if (mostSimilarGroup.isPresent()) {
              // calculate similarity score to the most similar usage in all usages
-            highestSimilarityRating = mostSimilarGroup.get().getSimilarityToAverageOfThisGroup(codeBlock);
+//            highestSimilarityRating = mostSimilarGroup.get().getSimilarityToAverageOfThisGroup(codeBlock);
+            highestSimilarityRating = mostSimilarGroup.get().getSimilarityToMostSimilarUsageOfThisGroup(codeBlock);
         }
         // Check if returning exact match because classic find usages is weird.
         if (highestSimilarityRating > 1.0) {
