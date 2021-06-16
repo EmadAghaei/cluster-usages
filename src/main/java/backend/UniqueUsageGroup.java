@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 
 public class UniqueUsageGroup implements UsageGroup {
+
+
     String usageDisplayed;
     int count = 1;
 
@@ -77,5 +79,8 @@ public class UniqueUsageGroup implements UsageGroup {
             return this.count - ((UniqueUsageGroup) o).count;
         }
         return 0;
+    }
+    public String getUsageDisplayed() {
+        return usageDisplayed;
     }
 }

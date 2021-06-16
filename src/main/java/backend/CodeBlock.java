@@ -1,6 +1,7 @@
 package backend;
 
 import com.intellij.psi.PsiElement;
+import com.intellij.usages.PsiElementUsageTarget;
 import gumtree.spoon.AstComparator;
 import gumtree.spoon.diff.Diff;
 import org.jetbrains.annotations.NotNull;
@@ -8,25 +9,42 @@ import spoon.Launcher;
 import spoon.reflect.declaration.CtClass;
 
 public class CodeBlock {
-    private PsiElement codeBlock;
+    private PsiElement psiElement;
+    private String parentType= "Usage Group ";
     private CtClass<?> ctClass;
     private final static AstComparator AST_COMPARATOR = new AstComparator();
 
-    public CodeBlock(PsiElement codeBlock) {
-        this.codeBlock = codeBlock;
+
+    public CodeBlock(PsiElement psiElement, String parentType) {
+        this.psiElement = psiElement;
+        this.parentType = parentType;
         String fakeBeginStub = "class clazz {";
         String fakeEndStub = "}";
         try {
-            this.ctClass = Launcher.parseClass(fakeBeginStub + codeBlock.getText() + fakeEndStub);
+            this.ctClass = Launcher.parseClass(fakeBeginStub + psiElement.getText() + fakeEndStub);
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.out.println("\n ---" + codeBlock.getText());
+            System.out.println("\n ---" + psiElement.getText());
         }
 
     }
 
+    public String getParentType() {
+        return parentType;
+    }
+    public void setParentType(String parentType) {
+        this.parentType = parentType;
+    }
+    public PsiElement getPsiElement() {
+        return psiElement;
+    }
+
+    public void setPsiElement(PsiElement psiElement) {
+        this.psiElement = psiElement;
+    }
+
     public String getCode() {
-        return codeBlock.getText();
+        return psiElement.getText();
     }
 
     @Override
