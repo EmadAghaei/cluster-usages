@@ -14,7 +14,7 @@
 - [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
 
 <!-- Plugin description -->
-Extracts usages, computes a diff between pairs of usages, 
+A ML powered grouping by a type of code usage in Find Usage, it extracts usages, computes a diff between pairs of usages, 
 generates similarity scores, and uses these scores to form usage clusters.
 
 To cluster usages, From the main menu, select Edit | Find Usages | Find Usages. Or you could also use the shortcut Alt + F7 for Windows/Linux or Option + F7 for Mac OS.
