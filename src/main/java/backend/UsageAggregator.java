@@ -5,6 +5,7 @@ import com.intellij.usageView.UsageInfo;
 import com.intellij.usages.Usage;
 import com.intellij.usages.UsageGroup;
 import com.intellij.usages.UsageInfo2UsageAdapter;
+import com.intellij.usages.UsageToPsiElementProvider;
 
 import java.util.*;
 
@@ -26,6 +27,20 @@ public class UsageAggregator {
 //            codeBlockSet.add(codeBlockPsiElement.getText());
 //        }
         CodeBlock codeBlock = new CodeBlock(codeBlockPsiElement);
+        return cluster(codeBlock);
+    }
+
+    public synchronized UsageGroup getAggregateUsage2(Usage usage) {
+
+        UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
+        final PsiElement psiElement = UsageToPsiElementProvider.findAppropriateParentFrom(usageInfo.getElement());
+        if (psiElement == null) return null;
+//        if (codeBlockSet.contains(codeBlockPsiElement.getText())) {
+//            return null;
+//        } else {
+//            codeBlockSet.add(codeBlockPsiElement.getText());
+//        }
+        CodeBlock codeBlock = new CodeBlock(psiElement);
         return cluster(codeBlock);
     }
 

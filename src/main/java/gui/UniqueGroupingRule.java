@@ -52,7 +52,9 @@ public class UniqueGroupingRule extends SingleParentUsageGroupingRule {
 //            return null; // Give up after 100 usages
 //        }
 
-        UsageGroup out = usageAggregator.getAggregateUsage(usage);
+
+//        UsageGroup out = usageAggregator.getAggregateUsage(usage);
+        UsageGroup out = usageAggregator.getAggregateUsage2(usage);
         return out;
     }
 }
