@@ -1,23 +1,30 @@
 package backend;
 
+import com.intellij.lang.Language;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.impl.source.tree.java.ImportStatementElement;
+import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.usages.Usage;
 import com.intellij.usages.UsageGroup;
 import com.intellij.usages.UsageInfo2UsageAdapter;
 import com.intellij.usages.UsageToPsiElementProvider;
+import com.intellij.psi.*;
 
 import java.util.*;
 
 public class UsageAggregator {
 
+
     // If we set the similarity threshold to 0.25, usages that are more than 25% similar would be assigned to the same group.
-    private final static double MIN_SIMLIAR_THRESHOLD = 0.25;
+    private final static double MIN_SIMLIAR_THRESHOLD = 0.75;
     private List<UsageGroupAst> astSimilarityList = new LinkedList<>();
-    private int groupCount=1;
-//    private Set<String> codeBlockSet = new HashSet<>();
+    private volatile int groupCount = 1;
+    private static final Language JAVA = Language.findLanguageByID("JAVA");
+    private static final int MAX_HOPES = 17;
 
     public synchronized UsageGroup getAggregateUsage(Usage usage) {
+
         UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
         PsiElement codeBlockPsiElement = getFirstCodeBlockParent(usageInfo.getElement());
         if (codeBlockPsiElement == null) return null;
@@ -44,18 +51,28 @@ public class UsageAggregator {
         return cluster(codeBlock);
     }
 
-//    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
+
+    public synchronized UsageGroup getAggregateUsageBasedOnStatement(Usage usage) {
+
+        UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
+        final PsiElement psiElement = findStatementFrom(usageInfo.getElement());
+        if (psiElement == null) return null;
+        CodeBlock codeBlock = new CodeBlock(psiElement);
+        return cluster(codeBlock);
+    }
+
+    //    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
 //    Based on max of mins similarity, it chooses the best cluster.
     private synchronized UniqueUsageGroup cluster(CodeBlock codeBlock) {
         double highestSimilarityRating = 0.0;
         // find the most similar usage to current code block
-        Optional<UsageGroupAst>  mostSimilarGroup = astSimilarityList.stream()
+        Optional<UsageGroupAst> mostSimilarGroup = astSimilarityList.stream()
                 .max((a, b) ->
                         (int) (10000 * (a.getSimilarityToMostSimilarUsageOfThisGroup(codeBlock) - b.getSimilarityToMostSimilarUsageOfThisGroup(codeBlock))));
 //                        (int) (10000 * (a.getSimilarityToAverageOfThisGroup(codeBlock) - b.getSimilarityToAverageOfThisGroup(codeBlock))));
 
         if (mostSimilarGroup.isPresent()) {
-             // calculate similarity score to the most similar usage in all usages
+            // calculate similarity score to the most similar usage in all usages
 //            highestSimilarityRating = mostSimilarGroup.get().getSimilarityToAverageOfThisGroup(codeBlock);
             highestSimilarityRating = mostSimilarGroup.get().getSimilarityToMostSimilarUsageOfThisGroup(codeBlock);
         }
@@ -70,7 +87,8 @@ public class UsageAggregator {
             return mostSimilarGroup.get().getGroup();
         } else {
             // Create and return a code block usage key
-            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Usage Group ");
+            UniqueUsageGroup newAstKey = new UniqueUsageGroup("Usage Group #"+groupCount++);
+            newAstKey.incrementUsageCount();
             astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
             return newAstKey;
         }
@@ -82,5 +100,24 @@ public class UsageAggregator {
         }
 //        PsiElement codeBlockPsiElement = PsiTreeUtil.getParentOfType(usageInfo.getElement(), PsiCodeBlock.class);
         return element;
+    }
+
+    private synchronized PsiElement findStatementFrom(PsiElement element) {
+        if (element.getLanguage() == JAVA) {
+            int hopes = 0;
+            while (hopes++ < MAX_HOPES && element != null) {
+                if (element.toString().endsWith("Statement") ||
+                        element instanceof PsiField ||
+                        element instanceof PsiClassInitializer ||
+                        element instanceof PsiMethod ||
+                        element instanceof ImportStatementElement ||
+                        element instanceof PsiClass
+                ) return element;
+                if(element instanceof PsiDocComment) return  null;
+
+                element = element.getParent();
+            }
+        }
+        return null;
     }
 }

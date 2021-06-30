@@ -54,7 +54,7 @@ public class UniqueGroupingRule extends SingleParentUsageGroupingRule {
 
 
 //        UsageGroup out = usageAggregator.getAggregateUsage(usage);
-        UsageGroup out = usageAggregator.getAggregateUsage2(usage);
+        UsageGroup out = usageAggregator.getAggregateUsageBasedOnStatement(usage);
         return out;
     }
 }
