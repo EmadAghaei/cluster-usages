@@ -94,12 +94,18 @@ public class UsageAggregator {
                 if (u.isAccessedForWriting()) return UsageType.WRITE;
                 if (u.isAccessedForReading()) return UsageType.READ;
             }
+            if (element instanceof PsiLiteralExpression) {
+                return UsageType.LITERAL_USAGE;
+            }
             if (parentBlockPsi instanceof PsiIfStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.if"));
+            if (parentBlockPsi instanceof PsiDeclarationStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.declaration"));
+            if (parentBlockPsi instanceof PsiAssertStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.assert"));
             if (parentBlockPsi instanceof PsiTryStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.try"));
             if (parentBlockPsi instanceof PsiLoopStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.loop"));
             if (parentBlockPsi instanceof PsiReturnStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.return"));
-            if (parentBlockPsi instanceof PsiReferenceExpression) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.reference.expr"));
             if (parentBlockPsi instanceof PsiExpressionStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.expr"));
+            if (parentBlockPsi instanceof PsiReferenceExpression || element instanceof PsiReferenceExpression) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.reference.expr"));
+            if (parentBlockPsi instanceof PsiField) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.field"));
 
             return UsageType.UNCLASSIFIED;
         }
