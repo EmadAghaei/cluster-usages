@@ -4,6 +4,8 @@ import com.intellij.lang.PsiParser;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtilCore;
+import com.intellij.usages.impl.rules.JavaUsageTypeProvider;
+import com.intellij.usages.impl.rules.UsageType;
 import gumtree.spoon.AstComparator;
 import gumtree.spoon.diff.Diff;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +16,29 @@ public class CodeBlock {
     private PsiElement psiCodeBlock;
     private CtClass<?> ctClass;
     private final static AstComparator AST_COMPARATOR = new AstComparator();
+    private UsageType usageType;
+
+    public CodeBlock(PsiElement codeBlock, UsageType usageType) {
+        this.psiCodeBlock = codeBlock;
+        this.usageType=usageType;
+        String fakeBeginStub = "class clazz {";
+        String fakeEndStub = "}";
+
+        try {
+            if (codeBlock.toString().endsWith("Statement")) {
+                this.ctClass = Launcher.parseClass(fakeBeginStub +"{ "+ codeBlock.getText() +"} "+ fakeEndStub);
+            } else {
+                this.ctClass = Launcher.parseClass(fakeBeginStub + codeBlock.getText() + fakeEndStub);
+            }
+
+//            System.out.println("CtClass: ");
+//            System.out.println(ctClass);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.out.println("\n ---" + codeBlock.getText());
+        }
+
+    }
 
     public CodeBlock(PsiElement codeBlock) {
         this.psiCodeBlock = codeBlock;
@@ -38,6 +63,12 @@ public class CodeBlock {
 
     public String getCode() {
         return psiCodeBlock.getText();
+    }
+
+    public UsageType getType (){
+//      return new JavaUsageTypeProvider().getUsageType(psiCodeBlock);
+        return usageType;
+
     }
 
     @Override

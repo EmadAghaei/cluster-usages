@@ -3,6 +3,12 @@
 # cluster-usages Changelog
 
 ## [Unreleased]
+## [0.0.4]
+### changes
+- Update usage scope for finding similarities
+- Change cluster names based on usages
+- Sort clusters
+## [0.0.3]
 ## [0.0.2]
 ## [0.0.2]
 ## [0.0.1]

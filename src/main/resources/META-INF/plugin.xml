@@ -11,6 +11,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <usageGroupingRuleProvider implementation="gui.UniqueGroupingRuleProvider"/>
+        <usageTypeProvider implementation="gui.UniqueUsageTypeProvider"/>
     </extensions>
 
 <!--    <extensions defaultExtensionNs="com.intellij">-->
