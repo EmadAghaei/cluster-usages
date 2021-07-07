@@ -11,7 +11,6 @@ import com.intellij.usages.*;
 import com.intellij.psi.*;
 import com.intellij.usages.impl.rules.*;
 import com.intellij.usages.rules.PsiElementUsage;
-import gui.UniqueUsageTypeProvider;
 import gui.UsageGroupBundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +63,6 @@ public class UsageAggregator {
         UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
 
 
-
 //        UsageTypeGroupingRule usageTypeGroupingRule = new UsageTypeGroupingRule();
 //        UsageGroup usageGroup = usageTypeGroupingRule.getParentGroupsFor(usage,UsageTarget.EMPTY_ARRAY).get(0);
 
@@ -77,63 +75,65 @@ public class UsageAggregator {
     }
 
     private UsageType findUsageType(@Nullable Usage usage, PsiElement parentBlockPsi) {
+
+        UsageTypeGroupingRule usageTypeGroupingRule = new UsageTypeGroupingRule();
+        List<UsageGroup> usageGroupList = usageTypeGroupingRule.getParentGroupsFor(usage, UsageTarget.EMPTY_ARRAY);
+        if (usageGroupList == null || usageGroupList.size() == 0) return null;
+        PsiElement element = null;
         if (usage instanceof PsiElementUsage) {
-            PsiElementUsage elementUsage = (PsiElementUsage)usage;
 
-            PsiElement element = elementUsage.getElement();
-            UsageType usageType = getUsageType(element, UsageTarget.EMPTY_ARRAY);
+            PsiElementUsage elementUsage = (PsiElementUsage) usage;
 
-            if (usageType == null && element instanceof PsiFile && elementUsage instanceof UsageInfo2UsageAdapter) {
-                usageType = ((UsageInfo2UsageAdapter)elementUsage).getUsageType();
-            }
-
-            if (usageType != null) return usageType;
-
-            if (usage instanceof ReadWriteAccessUsage) {
-                ReadWriteAccessUsage u = (ReadWriteAccessUsage)usage;
-                if (u.isAccessedForWriting()) return UsageType.WRITE;
-                if (u.isAccessedForReading()) return UsageType.READ;
-            }
-            if (element instanceof PsiLiteralExpression) {
-                return UsageType.LITERAL_USAGE;
-            }
-            if (parentBlockPsi instanceof PsiIfStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.if"));
-            if (parentBlockPsi instanceof PsiDeclarationStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.declaration"));
-            if (parentBlockPsi instanceof PsiAssertStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.assert"));
-            if (parentBlockPsi instanceof PsiTryStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.try"));
-            if (parentBlockPsi instanceof PsiLoopStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.loop"));
-            if (parentBlockPsi instanceof PsiReturnStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.return"));
-            if (parentBlockPsi instanceof PsiExpressionStatement) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.expr"));
-            if (parentBlockPsi instanceof PsiReferenceExpression || element instanceof PsiReferenceExpression) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.reference.expr"));
-            if (parentBlockPsi instanceof PsiField) return  new UsageType(UsageGroupBundle.messagePointer("usage.type.field"));
-
-            return UsageType.UNCLASSIFIED;
+            element = elementUsage.getElement();
         }
+        if (!usageGroupList.get(0).getText(null).equals("Unclassified {0}"))
+            return new UsageType(usageGroupList.get(0).getText(null));
 
-        return null;
+        if (parentBlockPsi instanceof PsiIfStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.if"));
+        if (parentBlockPsi instanceof PsiDeclarationStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.declaration"));
+        if (parentBlockPsi instanceof PsiAssertStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.assert"));
+        if (parentBlockPsi instanceof PsiTryStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.try"));
+        if (parentBlockPsi instanceof PsiLoopStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.loop"));
+        if (parentBlockPsi instanceof PsiReturnStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.return"));
+        if (parentBlockPsi instanceof PsiExpressionStatement)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.expr"));
+        if (parentBlockPsi instanceof PsiReferenceExpression || (element != null && element instanceof PsiReferenceExpression))
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.reference.expr"));
+        if (parentBlockPsi instanceof PsiField)
+            return new UsageType(UsageGroupBundle.messagePointer("usage.type.field"));
+
+        return UsageType.UNCLASSIFIED;
+
     }
 
-    @Nullable
-    private static UsageType getUsageType(PsiElement element, UsageTarget @NotNull [] targets) {
-        if (element == null) return null;
 
-        if (PsiTreeUtil.getParentOfType(element, PsiComment.class, false) != null) { return UsageType.COMMENT_USAGE; }
-
-        for(UsageTypeProvider provider: UsageTypeProvider.EP_NAME.getExtensionList()) {
-            UsageType usageType;
-            if (provider instanceof UsageTypeProviderEx) {
-                usageType = ((UsageTypeProviderEx) provider).getUsageType(element, targets);
-            }
-            else {
-                usageType = provider.getUsageType(element);
-            }
-            if (usageType != null) {
-                return usageType;
-            }
-        }
-
-        return null;
-    }
+//    @Nullable
+//    private static UsageType getUsageType(PsiElement element, UsageTarget @NotNull [] targets) {
+//        if (element == null) return null;
+//
+//        if (PsiTreeUtil.getParentOfType(element, PsiComment.class, false) != null) { return UsageType.COMMENT_USAGE; }
+//
+//        for(UsageTypeProvider provider: UsageTypeProvider.EP_NAME.getExtensionList()) {
+//            UsageType usageType;
+//            if (provider instanceof UsageTypeProviderEx) {
+//                usageType = ((UsageTypeProviderEx) provider).getUsageType(element, targets);
+//            }
+//            else {
+//                usageType = provider.getUsageType(element);
+//            }
+//            if (usageType != null) {
+//                return usageType;
+//            }
+//        }
+//
+//        return null;
+//    }
 
     //    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
 //    Based on max of mins similarity, it chooses the best cluster.
@@ -166,7 +166,7 @@ public class UsageAggregator {
                 usageTypeStr = codeBlock.getType().toString();
             }
 
-            UniqueUsageGroup newAstKey = new UniqueUsageGroup( " #" + groupCount++ +" "+usageTypeStr);
+            UniqueUsageGroup newAstKey = new UniqueUsageGroup(" #" + groupCount++ + " " + usageTypeStr);
             newAstKey.incrementUsageCount();
             astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
             return newAstKey;
