@@ -5,6 +5,7 @@
 ## [Unreleased]
 ## [0.0.4]
 ## [0.0.4]
+## [0.0.4]
 ### changes
 - Update usage scope for finding similarities
 - Change cluster names based on usages

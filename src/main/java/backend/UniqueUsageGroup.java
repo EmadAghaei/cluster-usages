@@ -1,20 +1,26 @@
 package backend;
 
+import com.intellij.codeInsight.editorActions.JoinLinesHandler;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.externalSystem.service.execution.NotSupportedException;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.usages.UsageGroup;
 import com.intellij.usages.UsageView;
 import com.intellij.usages.impl.rules.UsageGroupBase;
+import com.sun.tools.javac.util.Log;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class UniqueUsageGroup implements UsageGroup {
-    String usageDisplayed;
-    AtomicInteger count =  new AtomicInteger(0);
+    private static final Logger LOG = Logger.getInstance(UniqueUsageGroup.class);
+
+    private String usageDisplayed;
+    private final AtomicInteger count = new AtomicInteger(0);
 
     public UniqueUsageGroup() {
         super();
@@ -23,10 +29,16 @@ public class UniqueUsageGroup implements UsageGroup {
 
     public UniqueUsageGroup(String usageDisplayed) {
         this.usageDisplayed = usageDisplayed;
+        this.count.getAndIncrement();
+    }
+    public String getUsageDisplayed() {
+        return usageDisplayed;
+    }
+    public void setUsageDisplayed(String displayed) {
+         this.usageDisplayed=displayed;
     }
 
     void incrementUsageCount() {
-
         count.getAndIncrement();
     }
 
@@ -77,22 +89,39 @@ public class UniqueUsageGroup implements UsageGroup {
 
     @Override
     public int compareTo(@NotNull UsageGroup o) {
-//        if (!(o instanceof UniqueUsageGroup)) {
-//            return -1;
-//        }
-        return getText(null).compareToIgnoreCase(o.getText(null));
-//        return this.count.get() - ((UniqueUsageGroup) o).count.get();
-//        int order = this.
-//        if (order != 0) {
+        synchronized (o) {
+            if (!(o instanceof UniqueUsageGroup)) {
+                return -1;
+            }
+            UniqueUsageGroup that = (UniqueUsageGroup) o;
+            int same = this.getText(null).compareToIgnoreCase(that.getText(null));
+//            if (same == 0) {
+                return same;
+//            }
+//            int order = Comparing.compare(that.count.get(), this.count.get());
 //            return order;
-//        }
-//        return getText(null).compareToIgnoreCase(o.getText(null));
-    }
-    /* @Override
-    public int compareTo(@NotNull UsageGroup o) {
-        if (o instanceof UniqueUsageGroup) {
-            return this.count.get() - ((UniqueUsageGroup) o).count.get();
         }
-        return 0;
-    }*/
+
+    }
+
+
+    ////        if(that.equals(this)) return 0;
+//        int order = Comparing.compare(this.count.get(), that.count.get());
+//        return order;
+//        if (order != 0) {
+//            return -1*order;
+//        }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UniqueUsageGroup that = (UniqueUsageGroup) o;
+        return Objects.equals(usageDisplayed, that.usageDisplayed) && Objects.equals(count, that.count);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(usageDisplayed, count);
+    }
 }
+

@@ -1,35 +1,37 @@
 package backend;
 
+import com.google.common.base.Joiner;
 import com.intellij.lang.Language;
+import com.intellij.openapi.util.Segment;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.source.tree.java.ImportStatementElement;
 import com.intellij.psi.javadoc.PsiDocComment;
-import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.usageView.UsageInfo;
-import com.intellij.usageView.UsageViewBundle;
 import com.intellij.usages.*;
 import com.intellij.psi.*;
 import com.intellij.usages.impl.rules.*;
 import com.intellij.usages.rules.PsiElementUsage;
 import gui.UsageGroupBundle;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class UsageAggregator {
 
 
     // If we set the similarity threshold to 0.25, usages that are more than 25% similar would be assigned to the same group.
-    private final static double MIN_SIMLIAR_THRESHOLD = 0.75;
+    private final static double MIN_SIMLIAR_THRESHOLD = 0.85;
     private List<UsageGroupAst> astSimilarityList = new LinkedList<>();
-    private volatile int groupCount = 1;
+    private volatile int groupNo = 1;
     private static final Language JAVA = Language.findLanguageByID("JAVA");
     private static final int MAX_HOPES = 17;
 
     public synchronized UsageGroup getAggregateUsage(Usage usage) {
 
         UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
+//        com.intellij.usageView.UsageInfo#getReference
 
 //        JavaUsageTypeProvider usageTypeProvider = usageInfo.
         PsiElement codeBlockPsiElement = getFirstCodeBlockParent(usageInfo.getElement());
@@ -69,9 +71,19 @@ public class UsageAggregator {
         final PsiElement psiElement = findStatementFrom(usageInfo.getElement());
         UsageType usageType = findUsageType(usage, psiElement);
 
+
         if (psiElement == null) return null;
         CodeBlock codeBlock = new CodeBlock(psiElement, usageType);
         return cluster(codeBlock);
+    }
+
+    public synchronized UsageGroup getGroupBasedOnStatement(Usage usage) {
+
+        UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
+        final PsiElement psiElement = findStatementFrom(usageInfo.getElement());
+        if (psiElement == null) return null;
+        CodeBlock codeBlock = new CodeBlock(psiElement);
+        return cluster2(codeBlock, usage, psiElement);
     }
 
     private UsageType findUsageType(@Nullable Usage usage, PsiElement parentBlockPsi) {
@@ -112,32 +124,76 @@ public class UsageAggregator {
 
     }
 
+    //    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
+//    Based on max of mins similarity, it chooses the best cluster.
+    private synchronized UniqueUsageGroup cluster2(final CodeBlock codeBlock, Usage usage, PsiElement parentPsiElement) {
+        double highestSimilarityRating = 0.0;
+        // find the most similar usage to current code block
+        Optional<UsageGroupAst> mostSimilarGroup = astSimilarityList.stream()
+                .max((a, b) ->
+                        (int) (10000 * (a.getSimilarityToMostSimilarUsageOfThisGroup(codeBlock) - b.getSimilarityToMostSimilarUsageOfThisGroup(codeBlock))));
+//                        (int) (10000 * (a.getSimilarityToAverageOfThisGroup(codeBlock) - b.getSimilarityToAverageOfThisGroup(codeBlock))));
 
-//    @Nullable
-//    private static UsageType getUsageType(PsiElement element, UsageTarget @NotNull [] targets) {
-//        if (element == null) return null;
-//
-//        if (PsiTreeUtil.getParentOfType(element, PsiComment.class, false) != null) { return UsageType.COMMENT_USAGE; }
-//
-//        for(UsageTypeProvider provider: UsageTypeProvider.EP_NAME.getExtensionList()) {
-//            UsageType usageType;
-//            if (provider instanceof UsageTypeProviderEx) {
-//                usageType = ((UsageTypeProviderEx) provider).getUsageType(element, targets);
-//            }
-//            else {
-//                usageType = provider.getUsageType(element);
-//            }
-//            if (usageType != null) {
-//                return usageType;
-//            }
-//        }
-//
-//        return null;
-//    }
+        if (mostSimilarGroup.isPresent()) {
+            // calculate similarity score to the most similar usage in all usages
+//            highestSimilarityRating = mostSimilarGroup.get().getSimilarityToAverageOfThisGroup(codeBlock);
+            highestSimilarityRating = mostSimilarGroup.get().getSimilarityToMostSimilarUsageOfThisGroup(codeBlock);
+        }
+        // Check if returning exact match because classic find usages is weird.
+        if (highestSimilarityRating > 1.0) {
+            throw new RuntimeException("This should never happen!");
+        }
+        // it found the cluster which can be added.
+        if (highestSimilarityRating > MIN_SIMLIAR_THRESHOLD) {
+            mostSimilarGroup.get().getElements().add(codeBlock);
+            mostSimilarGroup.get().getGroup().incrementUsageCount();
+//            int i = 0;
+//            mostSimilarGroup.get().getGroup().setUsageDisplayed(mostSimilarGroup.get().getGroup().getUsageDisplayed() + (i++));
+            return mostSimilarGroup.get().getGroup();
+        } else {
+            // Create and return a code block usage key
+            StringBuilder stringBuilder = new StringBuilder("#");
+            UsageType usageType = findUsageType(usage, parentPsiElement);
+
+//            String usageTypeStr =usage.getPresentation().getTooltipText();
+
+//            String usageTypeStr = ((UsageInfo2UsageAdapter) usage).getUsageInfo().getElement().getText();
+//            String usageTypeStr = codeBlock.getCodeTokenized();
+            String groupTypeAndSegment = "";
+            if (!usageType.toString().equals("Unclassified {0}")) {
+                groupTypeAndSegment = usageType.toString();
+            }
+            groupTypeAndSegment += " " + calculateGroupName(usage, parentPsiElement);
+
+            if (groupNo <= 9) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(groupNo++).append(" ").append(groupTypeAndSegment);
+
+            final UniqueUsageGroup newAstKey = new UniqueUsageGroup(stringBuilder.toString());
+//            newAstKey.incrementUsageCount();
+            astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
+            return newAstKey;
+        }
+    }
+
+    private String calculateGroupName(Usage usage, PsiElement parentPsiElement) {
+        UsageInfo usageInfo = ((UsageInfo2UsageAdapter) usage).getUsageInfo();
+        PsiElement element = usageInfo.getElement();
+//        PsiElement element = parentPsiElement;
+        Segment segment = usageInfo.getSegment();
+        ChunkExtractor chunkExtractor = ChunkExtractor.getExtractor(usageInfo.getFile());
+        TextRange range = element.getTextRange();
+        TextChunk[] chunks = chunkExtractor.createTextChunks((UsageInfo2UsageAdapter) usage, usageInfo.getFile().getText(),
+                range.getStartOffset(), range.getEndOffset(), false, new ArrayList<>());
+        System.out.println(segment);
+        return Arrays.toString(chunks).replaceAll(",", "").replaceAll(" ", "");
+
+    }
 
     //    It first finds the minimum similarity between the usage and all members of all clusters separately and memoizes them.
 //    Based on max of mins similarity, it chooses the best cluster.
-    private synchronized UniqueUsageGroup cluster(CodeBlock codeBlock) {
+    private synchronized UniqueUsageGroup cluster(final CodeBlock codeBlock) {
         double highestSimilarityRating = 0.0;
         // find the most similar usage to current code block
         Optional<UsageGroupAst> mostSimilarGroup = astSimilarityList.stream()
@@ -165,9 +221,14 @@ public class UsageAggregator {
             if (!codeBlock.getType().toString().equals("Unclassified {0}")) {
                 usageTypeStr = codeBlock.getType().toString();
             }
+            StringBuilder stringBuilder = new StringBuilder("#");
+            if (groupNo <= 9) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(groupNo++).append(" ").append(usageTypeStr);
 
-            UniqueUsageGroup newAstKey = new UniqueUsageGroup(" #" + groupCount++ + " " + usageTypeStr);
-            newAstKey.incrementUsageCount();
+            final UniqueUsageGroup newAstKey = new UniqueUsageGroup(stringBuilder.toString());
+//            newAstKey.incrementUsageCount();
             astSimilarityList.add(new UsageGroupAst(codeBlock, newAstKey));
             return newAstKey;
         }

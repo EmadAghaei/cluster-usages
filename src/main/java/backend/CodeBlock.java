@@ -18,6 +18,8 @@ public class CodeBlock {
     private final static AstComparator AST_COMPARATOR = new AstComparator();
     private UsageType usageType;
 
+
+
     public CodeBlock(PsiElement codeBlock, UsageType usageType) {
         this.psiCodeBlock = codeBlock;
         this.usageType=usageType;
@@ -40,29 +42,29 @@ public class CodeBlock {
 
     }
 
-    public CodeBlock(PsiElement codeBlock) {
-        this.psiCodeBlock = codeBlock;
+    public CodeBlock(PsiElement psiElement) {
+        this.psiCodeBlock = psiElement;
         String fakeBeginStub = "class clazz {";
         String fakeEndStub = "}";
-
         try {
-            if (codeBlock.toString().endsWith("Statement")) {
-                this.ctClass = Launcher.parseClass(fakeBeginStub +"{ "+ codeBlock.getText() +"} "+ fakeEndStub);
+            if (psiElement.toString().endsWith("Statement")) {
+                this.ctClass = Launcher.parseClass(fakeBeginStub +"{ "+ psiElement.getText() +"} "+ fakeEndStub);
             } else {
-                this.ctClass = Launcher.parseClass(fakeBeginStub + codeBlock.getText() + fakeEndStub);
+                this.ctClass = Launcher.parseClass(fakeBeginStub + psiElement.getText() + fakeEndStub);
             }
-
-//            System.out.println("CtClass: ");
-//            System.out.println(ctClass);
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.out.println("\n ---" + codeBlock.getText());
+            System.out.println("\n ---" + psiElement.getText());
         }
-
     }
 
     public String getCode() {
         return psiCodeBlock.getText();
+    }
+
+    public String getCodeTokenized() {
+      return   psiCodeBlock.getUseScope().getDisplayName();
+//        return psiCodeBlock;
     }
 
     public UsageType getType (){
