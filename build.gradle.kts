@@ -30,7 +30,7 @@ repositories {
 }
 dependencies {
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.16.0")
-    implementation("fr.inria.gforge.spoon.labs:gumtree-spoon-ast-diff:1.23")
+    implementation("fr.inria.gforge.spoon.labs:gumtree-spoon-ast-diff:1.54")
 }
 
 // Configure gradle-intellij-plugin plugin.
