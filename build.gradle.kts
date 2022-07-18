@@ -29,7 +29,7 @@ repositories {
     jcenter()
 }
 dependencies {
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.16.0")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.21.0")
     implementation("fr.inria.gforge.spoon.labs:gumtree-spoon-ast-diff:1.23")
 }
 
